@@ -1,5 +1,6 @@
-run = "npm run dev"
-modules = ["nodejs-20"]
+entrypoint = "index.js"
+modules = ["nodejs-22"]
+hidden = [".config", "package-lock.json"]
 
 [gitHubImport]
 requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
@@ -8,6 +9,6 @@ requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
 channel = "stable-24_11"
 
 [deployment]
-run = ["npm", "run", "dev"]
-deploymentTarget = "preview"
+run = ["node", "index.js"]
+deploymentTarget = "autoscale"
 ignorePorts = false
