@@ -26,9 +26,40 @@ const ChangePassword = () => {
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Password changed successfully. Please login again.');
-      localStorage.clear();
-      navigate('/login');
+
+      // ✅ Clear mustChange flag
+      localStorage.removeItem('mustChange');
+
+      alert('Password changed successfully.');
+
+      // ✅ Redirect to correct dashboard
+      const user = JSON.parse(localStorage.getItem('user'));
+      const activeRole = localStorage.getItem('activeRole');
+
+      if (activeRole) {
+        switch (activeRole) {
+          case 'Admin':
+            return navigate('/admin');
+          case 'Concierge':
+            return navigate('/concierge');
+          case 'Transport':
+            return navigate('/transport');
+          case 'Chauffeur':
+            return navigate('/chauffeur');
+          default:
+            return navigate('/');
+        }
+      } else {
+        // If no role selected yet
+        const roles = Array.isArray(user.role) ? user.role : [user.role];
+        if (roles.length === 1) {
+          localStorage.setItem('activeRole', roles[0]);
+          return navigate(`/${roles[0].toLowerCase()}`);
+        } else {
+          // Fallback: redirect to role selector or home
+          return navigate('/');
+        }
+      }
     } catch (err) {
       setMessage(err.response?.data?.message || 'Something went wrong');
     }

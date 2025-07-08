@@ -23,8 +23,8 @@ const App = () => {
   const token = localStorage.getItem('token');
   const location = useLocation();
   const navigate = useNavigate();
-  const hideNavbarOn = ['/login', '/register-admin'];
-
+  const mustChange = localStorage.getItem('mustChange') === 'true';
+  const hideNavbarOn = ['/login', '/register-admin', mustChange && '/change-password'].filter(Boolean);
   useEffect(() => {
     if (token) {
       try {

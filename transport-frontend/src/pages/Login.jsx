@@ -23,6 +23,13 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
 
+      // If user must change password
+      if (user.mustChange) {
+        localStorage.setItem('mustChange', 'true');
+        navigate('/change-password');
+        return;
+      }
+
       const roles = Array.isArray(user.role) ? user.role : [user.role];
 
       if (roles.length === 1) {
