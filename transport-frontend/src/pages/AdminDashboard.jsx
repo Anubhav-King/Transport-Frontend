@@ -147,6 +147,7 @@ const AdminDashboard = () => {
             <option value="Concierge">Concierge</option>
             <option value="Transport">Transport</option>
             <option value="Admin">Admin</option>
+            <option value="Chauffeur">Chauffeur</option>
           </select>
         </div>
         <button onClick={handleAddUser} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
