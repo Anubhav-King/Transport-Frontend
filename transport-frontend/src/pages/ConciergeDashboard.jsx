@@ -340,11 +340,21 @@ const ConciergeDashboard = () => {
                         }
                       );
                       setVerifyModalDuty(res.data);
-                      setAdjustments((prev) => ({
-                        ...prev,
-                        editKm: type === 'km' ? false : prev.editKm,
-                        editHr: type === 'hr' ? false : prev.editHr,
-                      }));
+                      if (type === 'km') {
+                        setAdjustments((prev) => ({
+                          ...prev,
+                          editKm: false,
+                          additionalKm: res.data.additionalKm,
+                          kmRemark: res.data.additionalChargesRemark?.km || '',
+                        }));
+                      } else if (type === 'hr') {
+                        setAdjustments((prev) => ({
+                          ...prev,
+                          editHr: false,
+                          additionalHours: res.data.additionalHours,
+                          hrRemark: res.data.additionalChargesRemark?.hr || '',
+                        }));
+                      }
                     } catch (err) {
                       alert('Failed to recalculate charges.');
                     }
@@ -556,6 +566,8 @@ const ConciergeDashboard = () => {
                             setAdjustments((prev) => ({
                               ...prev,
                               editDiscount: false,
+                              discountPercent: updated.discountPercentage,
+                              discountRemark: updated.discountRemark,
                             }));
                           } catch (err) {
                             alert("Failed to apply discount");
@@ -638,13 +650,15 @@ const ConciergeDashboard = () => {
                                 <label className="text-sm capitalize block mb-1">
                                   {type} – ₹{total.toFixed(2)} to:
                                 </label>
-                                <select
-                                  value={expenseSplit[type] || ''}
-                                  onChange={(e) =>
-                                    setExpenseSplit({ ...expenseSplit, [type]: e.target.value })
-                                  }
-                                  className="border rounded px-2 py-1 w-full"
-                                >
+                                  <select
+                                    value={expenseSplit[type] || ''}
+                                    onChange={(e) =>
+                                      setExpenseSplit({ ...expenseSplit, [type]: e.target.value })
+                                    }
+                                    className={`border rounded px-2 py-1 w-full ${
+                                      expenseSplit[type] === '' ? 'border-red-500' : ''
+                                    }`}
+                                  >
                                   <option value="">Kindly select</option>
                                   <option value="guest">Guest</option>
                                   <option value="backend">Backend</option>

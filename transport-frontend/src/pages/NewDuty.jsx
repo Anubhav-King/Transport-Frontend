@@ -346,24 +346,62 @@ const NewDuty = () => {
           </>
         )}
 
-        <div className="col-span-2 font-semibold text-lg mt-4">Remarks & Discount</div>
+        <div
+          className="col-span-2 font-semibold text-lg mt-4"
+          title="Add remarks and optional discount if applicable"
+        >
+          Remarks & Discount
+        </div>
 
         <div className="col-span-2">
           <label className="block text-sm font-medium mb-1">Remarks</label>
-          <textarea name="remarks" value={form.remarks} onChange={handleChange} className="border p-2 rounded w-full" rows={2} placeholder="Optional" />
+          <textarea
+            name="remarks"
+            value={form.remarks}
+            onChange={handleChange}
+            className="border p-2 rounded w-full"
+            rows={2}
+            placeholder="Optional"
+          />
         </div>
 
         {form.charges === 'Chargeable' && (
           <>
             <div>
-              <label className="block text-sm font-medium mb-1">Discount % (Optional)</label>
-              <input type="number" name="discount" value={form.discount} onChange={handleChange} className="border p-2 rounded w-full" min="0" max="100" placeholder="e.g. 10" />
+              <label
+                className="block text-sm font-medium mb-1"
+                title="Applicable only for Chargeable duties. Discounted from guest base fare."
+              >
+                Discount % (Optional)
+              </label>
+              <input
+                type="number"
+                name="discount"
+                value={form.discount}
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+                min="0"
+                max="100"
+                placeholder="e.g. 10"
+              />
             </div>
 
             {form.discount && (
               <div>
-                <label className="block text-sm font-medium mb-1">Discount Remark</label>
-                <input type="text" name="discountRemark" value={form.discountRemark} onChange={handleChange} className="border p-2 rounded w-full" placeholder="Who approved the discount?" />
+                <label
+                  className="block text-sm font-medium mb-1"
+                  title="Mention who approved this discount. Required if discount is applied."
+                >
+                  Discount Remark
+                </label>
+                <input
+                  type="text"
+                  name="discountRemark"
+                  value={form.discountRemark}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                  placeholder="Who approved the discount?"
+                />
               </div>
             )}
           </>

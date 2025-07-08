@@ -184,6 +184,70 @@ const TransportDashboard = () => {
     window.location.reload();
   };
 
+  const renderActionButtons = (duty) => {
+    const isEditing = editDutyId === duty._id;
+
+    if (['pending', 'active'].includes(duty.status)) {
+      return isEditing ? (
+        <div className="flex gap-2 justify-center">
+          <button
+            onClick={() => handleSave(duty._id)}
+            className="text-green-600 underline text-sm"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => {
+              setEditDutyId(null);
+              setEditFields({ carNumber: '', chauffeurName: '' });
+            }}
+            className="text-gray-500 underline text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={async () => {
+            setEditDutyId(duty._id);
+            setEditFields({
+              carNumber: duty.carNumber || '',
+              chauffeurName: duty.chauffeurName || '',
+            });
+            await fetchAvailableResources();
+          }}
+          className="text-blue-600 underline text-sm"
+        >
+          Edit
+        </button>
+      );
+    }
+
+    if (duty.status === 'pending-verification-transport') {
+      return (
+        <button
+          onClick={() => setVerifyModalDuty(duty)}
+          className="text-indigo-600 underline text-sm"
+        >
+          Verify
+        </button>
+      );
+    }
+
+    if (duty.status === 'completed') {
+      return (
+        <button
+          onClick={() => setViewDuty(duty)}
+          className="text-blue-600 underline text-sm"
+        >
+          View / Print
+        </button>
+      );
+    }
+
+    return '-';
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Transport Dashboard</h1>
@@ -317,98 +381,7 @@ const TransportDashboard = () => {
                   : duty.charges || "N/A"}
               </td>
               <td className="border px-2 py-1 text-center">
-                {duty.status === 'pending' ? (
-                  editDutyId === duty._id ? (
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => handleSave(duty._id)}
-                        className="text-green-600 underline text-sm"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditDutyId(null);
-                          setEditFields({ carNumber: '', chauffeurName: '' });
-                        }}
-                        className="text-gray-500 underline text-sm"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={async () => {
-                        setEditDutyId(duty._id);
-                        setEditFields({
-                          carNumber: duty.carNumber || '',
-                          chauffeurName: duty.chauffeurName || '',
-                        });
-                        await fetchAvailableResources();
-                      }}
-                      className="text-blue-600 underline text-sm"
-                    >
-                      Edit
-                    </button>
-                  )
-                ) : duty.status === 'pending-verification-transport' ? (
-                  <button
-                    onClick={() => setVerifyModalDuty(duty)}
-                    className="text-indigo-600 underline text-sm"
-                  >
-                    Verify
-                  </button>
-                ) : duty.status === 'active' ? (
-                    editDutyId === duty._id ? (
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => handleSave(duty._id)}
-                          className="text-green-600 underline text-sm"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditDutyId(null);
-                            setEditFields({ carNumber: '', chauffeurName: '' });
-                          }}
-                          className="text-gray-500 underline text-sm"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={async () => {
-                          setEditDutyId(duty._id);
-                          setEditFields({
-                            carNumber: duty.carNumber || '',
-                            chauffeurName: duty.chauffeurName || '',
-                          });
-                          await fetchAvailableResources();
-                        }}
-                        className="text-blue-600 underline text-sm"
-                      >
-                        Edit
-                      </button>
-                    )
-                  ) : duty.status === 'pending-verification-transport' ? (
-                    <button
-                      onClick={() => setVerifyModalDuty(duty)}
-                      className="text-indigo-600 underline text-sm"
-                    >
-                      Verify
-                    </button>
-                  ) : duty.status === 'completed' ? (
-                  <button
-                    onClick={() => setViewDuty(duty)}
-                    className="text-blue-600 underline text-sm"
-                  >
-                    View / Print
-                  </button>
-                ) : (
-                  '-'
-                )}
+                {renderActionButtons(duty)}
               </td>
             </tr>
           ))}
@@ -485,11 +458,21 @@ const TransportDashboard = () => {
                         }
                       );
                       setVerifyModalDuty(res.data);
-                      setAdjustments((prev) => ({
-                        ...prev,
-                        editKm: type === 'km' ? false : prev.editKm,
-                        editHr: type === 'hr' ? false : prev.editHr,
-                      }));
+                      if (type === 'km') {
+                        setAdjustments((prev) => ({
+                          ...prev,
+                          editKm: false,
+                          additionalKm: res.data.additionalKm,
+                          kmRemark: res.data.additionalChargesRemark?.km || '',
+                        }));
+                      } else if (type === 'hr') {
+                        setAdjustments((prev) => ({
+                          ...prev,
+                          editHr: false,
+                          additionalHours: res.data.additionalHours,
+                          hrRemark: res.data.additionalChargesRemark?.hr || '',
+                        }));
+                      }
                     } catch (err) {
                       alert('Failed to recalculate charges.');
                     }
@@ -636,7 +619,11 @@ const TransportDashboard = () => {
               <div>
                 <label className="block text-sm font-medium mb-1">Guest Discount</label>
 
-                {adjustments.editDiscount ? (
+                {['Complimentary', 'Part of Package'].includes(verifyModalDuty.charges) ? (
+                  <p className="text-sm text-gray-500 italic">
+                    Discount disabled for {verifyModalDuty.charges} duties.
+                  </p>
+                ) : adjustments.editDiscount ? (
                   <>
                     <div className="flex gap-2 mb-2">
                       <input
@@ -701,6 +688,8 @@ const TransportDashboard = () => {
                             setAdjustments((prev) => ({
                               ...prev,
                               editDiscount: false,
+                              discountPercent: updated.discountPercentage,
+                              discountRemark: updated.discountRemark,
                             }));
                           } catch (err) {
                             alert("Failed to apply discount");
@@ -731,6 +720,8 @@ const TransportDashboard = () => {
                       setAdjustments({
                         ...adjustments,
                         editDiscount: true,
+                        discountPercent: verifyModalDuty.discountPercentage || 0,
+                        discountRemark: verifyModalDuty.discountRemark || '',
                       })
                     }
                   >
@@ -802,7 +793,9 @@ const TransportDashboard = () => {
                                 onChange={(e) =>
                                   setExpenseSplit({ ...expenseSplit, [type]: e.target.value })
                                 }
-                                className="border rounded px-2 py-1 w-full"
+                                className={`border rounded px-2 py-1 w-full ${
+                                  expenseSplit[type] === '' ? 'border-red-500' : ''
+                                }`}
                               >
                                 <option value="">Kindly select</option>
                                 <option value="guest">Guest</option>
