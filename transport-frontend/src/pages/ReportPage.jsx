@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { BASE_URL } from '../utils/api';
-import { useSettings } from '../context/SettingsContext';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { BASE_URL } from "../utils/api";
+import { useSettings } from "../context/SettingsContext";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 const ReportPage = () => {
   const [summary, setSummary] = useState([]);
   const [totals, setTotals] = useState(null);
-  const [range, setRange] = useState('today');
-  const [dutyType, setDutyType] = useState('');
-  const [carType, setCarType] = useState('');
-  const [packageCode, setPackageCode] = useState('');
+  const [range, setRange] = useState("today");
+  const [dutyType, setDutyType] = useState("");
+  const [carType, setCarType] = useState("");
+  const [packageCode, setPackageCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -20,17 +20,19 @@ const ReportPage = () => {
   const [viewDuty, setViewDuty] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const { dutyTypes, vehicleTypes, localUsePackages } = useSettings();
 
   const paginatedSummary = summary.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
   const totalPages = Math.ceil(summary.length / itemsPerPage);
 
   const getPackageLabel = (code) => {
-    const pkg = localUsePackages?.find(p => p.code === code || p.label === code);
+    const pkg = localUsePackages?.find(
+      (p) => p.code === code || p.label === code,
+    );
     return pkg ? pkg.label : code;
   };
 
@@ -50,8 +52,8 @@ const ReportPage = () => {
       setSummary(res.data.summary);
       setTotals(res.data.totals);
     } catch (err) {
-      console.error('Failed to fetch report:', err);
-      alert('Failed to fetch report');
+      console.error("Failed to fetch report:", err);
+      alert("Failed to fetch report");
     } finally {
       setLoading(false);
     }
@@ -66,8 +68,8 @@ const ReportPage = () => {
       setViewDuty(res.data);
       setModalOpen(true);
     } catch (err) {
-      console.error('Failed to fetch duty:', err);
-      alert('Failed to fetch duty details');
+      console.error("Failed to fetch duty:", err);
+      alert("Failed to fetch duty details");
       setModalOpen(false);
     } finally {
       setModalLoading(false);
@@ -111,7 +113,7 @@ const ReportPage = () => {
     });
 
     const today = new Date();
-    const fileName = `Trip_Report_${today.toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`;
+    const fileName = `Trip_Report_${today.toLocaleDateString("en-GB").replace(/\//g, "-")}.xlsx`;
     saveAs(blob, fileName);
   };
 
@@ -176,7 +178,7 @@ const ReportPage = () => {
             ))}
         </select>
 
-        {dutyType === 'Local Use' && (
+        {dutyType === "Local Use" && (
           <select
             value={packageCode}
             onChange={(e) => setPackageCode(e.target.value)}
@@ -203,16 +205,28 @@ const ReportPage = () => {
                 className="border rounded p-4 shadow-sm bg-gray-50"
               >
                 <h3 className="font-bold mb-2">{type}</h3>
-                <p className="text-sm">Guest Revenue: ₹{data.guestTotal.toFixed(2)}</p>
-                <p className="text-sm">Backend Cost: ₹{data.backendTotal.toFixed(2)}</p>
-                <p className="text-sm font-medium text-green-700">Profit: ₹{data.profit.toFixed(2)}</p>
+                <p className="text-sm">
+                  Guest Revenue: ₹{data.guestTotal.toFixed(2)}
+                </p>
+                <p className="text-sm">
+                  Backend Cost: ₹{data.backendTotal.toFixed(2)}
+                </p>
+                <p className="text-sm font-medium text-green-700">
+                  Profit: ₹{data.profit.toFixed(2)}
+                </p>
               </div>
             ))}
             <div className="border rounded p-4 shadow-md bg-blue-100">
               <h3 className="font-bold mb-2">Grand Total</h3>
-              <p className="text-sm">Guest Revenue: ₹{totals.grandTotal.guestTotal.toFixed(2)}</p>
-              <p className="text-sm">Backend Cost: ₹{totals.grandTotal.backendTotal.toFixed(2)}</p>
-              <p className="text-sm font-bold text-blue-800">Profit: ₹{totals.grandTotal.profit.toFixed(2)}</p>
+              <p className="text-sm">
+                Guest Revenue: ₹{totals.grandTotal.guestTotal.toFixed(2)}
+              </p>
+              <p className="text-sm">
+                Backend Cost: ₹{totals.grandTotal.backendTotal.toFixed(2)}
+              </p>
+              <p className="text-sm font-bold text-blue-800">
+                Profit: ₹{totals.grandTotal.profit.toFixed(2)}
+              </p>
             </div>
           </div>
         </div>
@@ -244,8 +258,12 @@ const ReportPage = () => {
                 <td className="px-3 py-1 border">{row.date}</td>
                 <td className="px-3 py-1 border">{row.dutyType}</td>
                 <td className="px-3 py-1 border">{row.vehicleType}</td>
-                <td className="px-3 py-1 border">₹{row.guestCharge.toFixed(2)}</td>
-                <td className="px-3 py-1 border">₹{row.backendCharge.toFixed(2)}</td>
+                <td className="px-3 py-1 border">
+                  ₹{row.guestCharge.toFixed(2)}
+                </td>
+                <td className="px-3 py-1 border">
+                  ₹{row.backendCharge.toFixed(2)}
+                </td>
                 <td className="px-3 py-1 border text-green-700">
                   ₹{(row.guestCharge - row.backendCharge).toFixed(2)}
                 </td>
@@ -276,7 +294,9 @@ const ReportPage = () => {
             </span>
 
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
               className="px-3 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
             >
@@ -296,7 +316,11 @@ const ReportPage = () => {
             className="bg-white w-[320px] p-4 rounded shadow relative max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {modalLoading && <p className="text-center text-gray-500">Loading trip details...</p>}
+            {modalLoading && (
+              <p className="text-center text-gray-500">
+                Loading trip details...
+              </p>
+            )}
 
             {viewDuty && !modalLoading && (
               <>
@@ -304,28 +328,37 @@ const ReportPage = () => {
                 <div className="text-center text-xs mb-2">
                   <h2 className="font-bold text-sm">Transport Duty Receipt</h2>
                   <p>Hotel XYZ, New Delhi</p>
-                  <p>{new Date(viewDuty.createdAt).toLocaleString('en-GB')}</p>
+                  <p>{new Date(viewDuty.createdAt).toLocaleString("en-GB")}</p>
                   <hr className="my-2" />
                 </div>
 
                 {/* Duty Info */}
                 <div className="text-xs">
-                  <p><strong>Guest:</strong> {viewDuty.guestName}</p>
-                  <p><strong>Duty Type:</strong> {viewDuty.dutyType}</p>
                   <p>
-                    <strong>Vehicle:</strong> {viewDuty.vehicleType} ({viewDuty.carNumber})
+                    <strong>Guest:</strong> {viewDuty.guestName}
                   </p>
                   <p>
-                    <strong>Pickup:</strong>{' '}
-                    {new Date(viewDuty.pickupDateTime).toLocaleString('en-GB')}
+                    <strong>Duty Type:</strong> {viewDuty.dutyType}
+                  </p>
+                  <p>
+                    <strong>Vehicle:</strong> {viewDuty.vehicleType} (
+                    {viewDuty.carNumber})
+                  </p>
+                  <p>
+                    <strong>Pickup:</strong>{" "}
+                    {new Date(viewDuty.pickupDateTime).toLocaleString("en-GB")}
                   </p>
 
-                  {viewDuty.dutyType === 'Local Use' && (
-                    <p><strong>Package:</strong> {getPackageLabel(viewDuty.packageCode)}</p>
-                  )}
-                  {viewDuty.dutyType === 'Office Transfer' && (
+                  {viewDuty.dutyType === "Local Use" && (
                     <p>
-                      <strong>Route:</strong> {viewDuty.pickupLocation} → {viewDuty.dropLocation}
+                      <strong>Package:</strong>{" "}
+                      {getPackageLabel(viewDuty.packageCode)}
+                    </p>
+                  )}
+                  {viewDuty.dutyType === "Office Transfer" && (
+                    <p>
+                      <strong>Route:</strong> {viewDuty.pickupLocation} →{" "}
+                      {viewDuty.dropLocation}
                     </p>
                   )}
 
@@ -337,53 +370,72 @@ const ReportPage = () => {
                     <>
                       {viewDuty.originalCharges?.guest?.base && (
                         <p className="text-gray-500 line-through">
-                          Base: ₹{viewDuty.originalCharges.guest.base.toFixed(2)}
+                          Base: ₹
+                          {viewDuty.originalCharges.guest.base.toFixed(2)}
                         </p>
                       )}
                       <p>
-                        <strong>Discounted Base:</strong> ₹{viewDuty.guestCharge.base.toFixed(2)}
+                        <strong>Discounted Base:</strong> ₹
+                        {viewDuty.guestCharge.base.toFixed(2)}
                       </p>
 
                       {viewDuty.originalCharges?.guest?.extra > 0 && (
                         <p className="text-gray-500 line-through">
-                          Extra: ₹{viewDuty.originalCharges.guest.extra.toFixed(2)}
+                          Extra: ₹
+                          {viewDuty.originalCharges.guest.extra.toFixed(2)}
                         </p>
                       )}
                       {viewDuty.guestCharge.extra > 0 && (
                         <p>
-                          <strong>Discounted Extra:</strong> ₹{viewDuty.guestCharge.extra.toFixed(2)}
+                          <strong>Discounted Extra:</strong> ₹
+                          {viewDuty.guestCharge.extra.toFixed(2)}
                         </p>
                       )}
                     </>
                   ) : (
                     <>
-                      <p><strong>Base:</strong> ₹{viewDuty.guestCharge.base.toFixed(2)}</p>
+                      <p>
+                        <strong>Base:</strong> ₹
+                        {viewDuty.guestCharge.base.toFixed(2)}
+                      </p>
                       {viewDuty.guestCharge.extra > 0 && (
-                        <p><strong>Extra:</strong> ₹{viewDuty.guestCharge.extra.toFixed(2)}</p>
+                        <p>
+                          <strong>Extra:</strong> ₹
+                          {viewDuty.guestCharge.extra.toFixed(2)}
+                        </p>
                       )}
                     </>
                   )}
-                  <p><strong>Tax:</strong> ₹{viewDuty.guestCharge.tax.toFixed(2)}</p>
+                  <p>
+                    <strong>Tax:</strong> ₹{viewDuty.guestCharge.tax.toFixed(2)}
+                  </p>
 
                   {viewDuty.expenses &&
-                    ['parking', 'fuel', 'misc'].map((type) => {
+                    ["parking", "fuel", "misc"].map((type) => {
                       const entries = viewDuty.expenses[type]?.entries || [];
 
                       const guestEntries = entries.filter((entry) => {
-                        if (entry.split === 'guest') return true;
+                        if (entry.split === "guest") return true;
                         return viewDuty.verifiedExpenses?.some(
-                          (v) => v.label === type && v.type === 'guest' && v.amount === entry.amount
+                          (v) =>
+                            v.label === type &&
+                            v.type === "guest" &&
+                            v.amount === entry.amount,
                         );
                       });
 
                       if (guestEntries.length === 0) return null;
 
-                      const total = guestEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                      const total = guestEntries.reduce(
+                        (sum, e) => sum + (e.amount || 0),
+                        0,
+                      );
 
                       return (
                         <div key={type} className="mb-1">
                           <p>
-                            <strong className="capitalize">{type}:</strong> ₹{total.toFixed(2)}
+                            <strong className="capitalize">{type}:</strong> ₹
+                            {total.toFixed(2)}
                           </p>
                           {/* Image thumbnails */}
                           <div className="flex gap-1 flex-wrap mt-1">
@@ -394,9 +446,13 @@ const ReportPage = () => {
                                   src={`${BASE_URL}/uploads/${entry.image}`}
                                   alt={`${type} ${idx + 1}`}
                                   className="w-10 h-10 object-cover rounded border cursor-pointer"
-                                  onClick={() => setPreviewImage(`${BASE_URL}/uploads/${entry.image}`)}
+                                  onClick={() =>
+                                    setPreviewImage(
+                                      `${BASE_URL}/uploads/${entry.image}`,
+                                    )
+                                  }
                                 />
-                              ) : null
+                              ) : null,
                             )}
                           </div>
                         </div>
@@ -405,13 +461,18 @@ const ReportPage = () => {
 
                   {viewDuty.discountPercentage > 0 && (
                     <>
-                      <p><strong>Discount:</strong> {viewDuty.discountPercentage}%</p>
+                      <p>
+                        <strong>Discount:</strong> {viewDuty.discountPercentage}
+                        %
+                      </p>
                       {viewDuty.discountRemark && (
-                        <p className="italic text-gray-600">Remark: {viewDuty.discountRemark}</p>
+                        <p className="italic text-gray-600">
+                          Remark: {viewDuty.discountRemark}
+                        </p>
                       )}
                     </>
                   )}
-                  {viewDuty.charges === 'Chargeable' ? (
+                  {viewDuty.charges === "Chargeable" ? (
                     <p className="font-semibold border-t mt-2 pt-1">
                       Guest Total: ₹{viewDuty.guestCharge.total.toFixed(2)}
                     </p>
@@ -423,32 +484,50 @@ const ReportPage = () => {
 
                   {/* Backend Charges */}
                   <hr className="my-2" />
-                  <p className="font-semibold underline mb-1">Backend Charges</p>
-                  <p><strong>Base:</strong> ₹{viewDuty.backendCharge.base.toFixed(2)}</p>
+                  <p className="font-semibold underline mb-1">
+                    Backend Charges
+                  </p>
+                  <p>
+                    <strong>Base:</strong> ₹
+                    {viewDuty.backendCharge.base.toFixed(2)}
+                  </p>
                   {viewDuty.backendCharge.extra > 0 && (
-                    <p><strong>Extra:</strong> ₹{viewDuty.backendCharge.extra.toFixed(2)}</p>
+                    <p>
+                      <strong>Extra:</strong> ₹
+                      {viewDuty.backendCharge.extra.toFixed(2)}
+                    </p>
                   )}
-                  <p><strong>Tax:</strong> ₹{viewDuty.backendCharge.tax.toFixed(2)}</p>
+                  <p>
+                    <strong>Tax:</strong> ₹
+                    {viewDuty.backendCharge.tax.toFixed(2)}
+                  </p>
 
                   {viewDuty.expenses &&
-                    ['parking', 'fuel', 'misc'].map((type) => {
+                    ["parking", "fuel", "misc"].map((type) => {
                       const entries = viewDuty.expenses[type]?.entries || [];
 
                       const backendEntries = entries.filter((entry) => {
-                        if (entry.split === 'backend') return true;
+                        if (entry.split === "backend") return true;
                         return viewDuty.verifiedExpenses?.some(
-                          (v) => v.label === type && v.type === 'backend' && v.amount === entry.amount
+                          (v) =>
+                            v.label === type &&
+                            v.type === "backend" &&
+                            v.amount === entry.amount,
                         );
                       });
 
                       if (backendEntries.length === 0) return null;
 
-                      const total = backendEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                      const total = backendEntries.reduce(
+                        (sum, e) => sum + (e.amount || 0),
+                        0,
+                      );
 
                       return (
                         <div key={type} className="mb-1">
                           <p>
-                            <strong className="capitalize">{type}:</strong> ₹{total.toFixed(2)}
+                            <strong className="capitalize">{type}:</strong> ₹
+                            {total.toFixed(2)}
                           </p>
                           {/* Image thumbnails */}
                           <div className="flex gap-1 flex-wrap mt-1">
@@ -459,9 +538,13 @@ const ReportPage = () => {
                                   src={`${BASE_URL}/uploads/${entry.image}`}
                                   alt={`${type} ${idx + 1}`}
                                   className="w-10 h-10 object-cover rounded border cursor-pointer"
-                                  onClick={() => setPreviewImage(`${BASE_URL}/uploads/${entry.image}`)}
+                                  onClick={() =>
+                                    setPreviewImage(
+                                      `${BASE_URL}/uploads/${entry.image}`,
+                                    )
+                                  }
                                 />
-                              ) : null
+                              ) : null,
                             )}
                           </div>
                         </div>
@@ -472,11 +555,15 @@ const ReportPage = () => {
                     Backend Total: ₹{viewDuty.backendCharge.total.toFixed(2)}
                   </p>
 
-                  <p className="mt-3 text-center">Thank you for choosing our service!</p>
+                  <p className="mt-3 text-center">
+                    Thank you for choosing our service!
+                  </p>
                 </div>
 
                 <hr className="my-2" />
-                <div className="text-center text-xs">Powered by Concierge Team</div>
+                <div className="text-center text-xs">
+                  Powered by Concierge Team
+                </div>
 
                 {/* Close Button */}
                 <div className="mt-4 flex justify-center">
@@ -507,7 +594,9 @@ const ReportPage = () => {
         </div>
       )}
 
-      {loading && <p className="text-center mt-4 text-gray-500">Loading report...</p>}
+      {loading && (
+        <p className="text-center mt-4 text-gray-500">Loading report...</p>
+      )}
     </div>
   );
 };
