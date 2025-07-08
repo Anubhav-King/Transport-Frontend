@@ -24,7 +24,11 @@ const ManageCarsAndChauffeurs = () => {
       const res = await axios.get(`${BASE_URL}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const chauffeursOnly = res.data.filter(user => user.role === 'Chauffeur' || (Array.isArray(user.role) && user.role.includes('Chauffeur'));
+      const chauffeursOnly = res.data.filter(
+        user =>
+          user.role === 'Chauffeur' ||
+          (Array.isArray(user.role) && user.role.includes('Chauffeur'))
+      );
       setChauffeurs(chauffeursOnly);
     } catch (err) {
       console.error('Error fetching chauffeurs:', err);
