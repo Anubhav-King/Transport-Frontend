@@ -1,32 +1,37 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { BASE_URL } from "../utils/api";
-import { useSettings } from "../context/SettingsContext";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
-import ViewTransportModal from "../components/ViewTransportModal";
+import { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
+import { BASE_URL } from '../utils/api';
+import { useSettings } from '../context/SettingsContext';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const ReportPage = () => {
   const [summary, setSummary] = useState([]);
   const [totals, setTotals] = useState(null);
-  const [range, setRange] = useState("today");
-  const [dutyType, setDutyType] = useState("");
-  const [carType, setCarType] = useState("");
+  const [range, setRange] = useState('today');
+  const [dutyType, setDutyType] = useState('');
+  const [carType, setCarType] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewingDuty, setViewingDuty] = useState(null);
   const itemsPerPage = 10;
 
-  const token = localStorage.getItem("token");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [viewDuty, setViewDuty] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  const token = localStorage.getItem('token');
   const { dutyTypes, vehicleTypes } = useSettings();
 
   const paginatedSummary = summary.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
-
   const totalPages = Math.ceil(summary.length / itemsPerPage);
 
+  const getPackageLabel = (code) => {
+    const pkg = settings?.localUsePackages?.find(p => p.label === code);
+    return pkg ? pkg.label : code;
+  };
   const fetchReport = async () => {
     setLoading(true);
     try {
@@ -42,12 +47,34 @@ const ReportPage = () => {
       setSummary(res.data.summary);
       setTotals(res.data.totals);
     } catch (err) {
-      console.error("Failed to fetch report:", err);
-      alert("Failed to fetch report");
+      console.error('Failed to fetch report:', err);
+      alert('Failed to fetch report');
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchDutyById = async (id) => {
+    setModalLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/duties/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setViewDuty(res.data);
+      setModalOpen(true);
+    } catch (err) {
+      console.error('Failed to fetch duty:', err);
+      alert('Failed to fetch duty details');
+      setModalOpen(false);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchReport();
+  }, [range, dutyType, carType]);
 
   const handleExportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
@@ -80,23 +107,14 @@ const ReportPage = () => {
 
     saveAs(blob, `Trip_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
-
-  const openDutyModal = async (id) => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/duties/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setViewingDuty(res.data);
-    } catch (err) {
-      console.error("Failed to load trip data:", err);
-      alert("Failed to load trip details.");
-    }
+  // Modal close handler
+  const closeModal = () => {
+    setModalOpen(false);
+    setViewDuty(null);
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchReport();
-  }, [range, dutyType, carType]);
+  // Preview image state (for images inside modal)
+  const [previewImage, setPreviewImage] = useState(null);
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -111,7 +129,7 @@ const ReportPage = () => {
         </button>
       </div>
 
-      {/* Filters */}
+{/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <select
           value={range}
@@ -190,7 +208,6 @@ const ReportPage = () => {
           </div>
         </div>
       )}
-
       {/* Summary Table */}
       <div className="overflow-x-auto border rounded shadow">
         <table className="min-w-full text-sm text-left">
@@ -208,20 +225,16 @@ const ReportPage = () => {
             {paginatedSummary.map((row, idx) => (
               <tr key={idx} className="even:bg-gray-50">
                 <td
-                  className="px-3 py-1 border text-blue-600 underline cursor-pointer"
-                  onClick={() => openDutyModal(row._id)}
+                  className="px-3 py-1 border text-blue-600 cursor-pointer underline"
+                  onClick={() => fetchDutyById(row.tripId)}
                 >
-                  {row._id.slice(-6).toUpperCase()}
+                  {row.tripId}
                 </td>
                 <td className="px-3 py-1 border">{row.date}</td>
                 <td className="px-3 py-1 border">{row.dutyType}</td>
                 <td className="px-3 py-1 border">{row.vehicleType}</td>
-                <td className="px-3 py-1 border">
-                  ₹{row.guestCharge.toFixed(2)}
-                </td>
-                <td className="px-3 py-1 border">
-                  ₹{row.backendCharge.toFixed(2)}
-                </td>
+                <td className="px-3 py-1 border">₹{row.guestCharge.toFixed(2)}</td>
+                <td className="px-3 py-1 border">₹{row.backendCharge.toFixed(2)}</td>
               </tr>
             ))}
             {summary.length === 0 && (
@@ -233,47 +246,254 @@ const ReportPage = () => {
             )}
           </tbody>
         </table>
+
+        {summary.length > itemsPerPage && (
+          <div className="flex justify-center items-center mt-4 space-x-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span className="px-2 text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Pagination */}
-      {summary.length > itemsPerPage && (
-        <div className="flex justify-center items-center mt-4 space-x-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+      {/* Modal */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white w-[320px] p-4 rounded shadow relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
-            Previous
-          </button>
+            {modalLoading && <p className="text-center text-gray-500">Loading trip details...</p>}
 
-          <span className="px-2 text-sm">
-            Page {currentPage} of {totalPages}
-          </span>
+            {viewDuty && !modalLoading && (
+              <>
+                {/* Header */}
+                <div className="text-center text-xs mb-2">
+                  <h2 className="font-bold text-sm">Transport Duty Receipt</h2>
+                  <p>Hotel XYZ, New Delhi</p>
+                  <p>{new Date(viewDuty.createdAt).toLocaleString('en-GB')}</p>
+                  <hr className="my-2" />
+                </div>
 
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-          >
-            Next
-          </button>
+                {/* Duty Info */}
+                <div className="text-xs">
+                  <p><strong>Guest:</strong> {viewDuty.guestName}</p>
+                  <p><strong>Duty Type:</strong> {viewDuty.dutyType}</p>
+                  <p>
+                    <strong>Vehicle:</strong> {viewDuty.vehicleType} ({viewDuty.carNumber})
+                  </p>
+                  <p>
+                    <strong>Pickup:</strong>{' '}
+                    {new Date(viewDuty.pickupDateTime).toLocaleString('en-GB')}
+                  </p>
+
+                  {viewDuty.dutyType === 'Local Use' && (
+                    <p><strong>Package:</strong> {getPackageLabel(viewDuty.packageCode)}</p>
+                  )}
+                  {viewDuty.dutyType === 'Office Transfer' && (
+                    <p>
+                      <strong>Route:</strong> {viewDuty.pickupLocation} → {viewDuty.dropLocation}
+                    </p>
+                  )}
+
+                  <hr className="my-2" />
+
+                  {/* Guest Charges */}
+                  <p className="font-semibold underline mb-1">Guest Charges</p>
+                  {viewDuty.discountPercentage > 0 ? (
+                    <>
+                      {viewDuty.originalCharges?.guest?.base && (
+                        <p className="text-gray-500 line-through">
+                          Base: ₹{viewDuty.originalCharges.guest.base.toFixed(2)}
+                        </p>
+                      )}
+                      <p>
+                        <strong>Discounted Base:</strong> ₹{viewDuty.guestCharge.base.toFixed(2)}
+                      </p>
+
+                      {viewDuty.originalCharges?.guest?.extra > 0 && (
+                        <p className="text-gray-500 line-through">
+                          Extra: ₹{viewDuty.originalCharges.guest.extra.toFixed(2)}
+                        </p>
+                      )}
+                      {viewDuty.guestCharge.extra > 0 && (
+                        <p>
+                          <strong>Discounted Extra:</strong> ₹{viewDuty.guestCharge.extra.toFixed(2)}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p><strong>Base:</strong> ₹{viewDuty.guestCharge.base.toFixed(2)}</p>
+                      {viewDuty.guestCharge.extra > 0 && (
+                        <p><strong>Extra:</strong> ₹{viewDuty.guestCharge.extra.toFixed(2)}</p>
+                      )}
+                    </>
+                  )}
+                  <p><strong>Tax:</strong> ₹{viewDuty.guestCharge.tax.toFixed(2)}</p>
+
+                  {viewDuty.expenses &&
+                    ['parking', 'fuel', 'misc'].map((type) => {
+                      const entries = viewDuty.expenses[type]?.entries || [];
+
+                      const guestEntries = entries.filter((entry) => {
+                        if (entry.split === 'guest') return true;
+                        return viewDuty.verifiedExpenses?.some(
+                          (v) => v.label === type && v.type === 'guest' && v.amount === entry.amount
+                        );
+                      });
+
+                      if (guestEntries.length === 0) return null;
+
+                      const total = guestEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+                      return (
+                        <div key={type} className="mb-1">
+                          <p>
+                            <strong className="capitalize">{type}:</strong> ₹{total.toFixed(2)}
+                          </p>
+                          {/* Image thumbnails */}
+                          <div className="flex gap-1 flex-wrap mt-1">
+                            {guestEntries.map((entry, idx) =>
+                              entry.image ? (
+                                <img
+                                  key={idx}
+                                  src={`${BASE_URL}/uploads/${entry.image}`}
+                                  alt={`${type} ${idx + 1}`}
+                                  className="w-10 h-10 object-cover rounded border cursor-pointer"
+                                  onClick={() => setPreviewImage(`${BASE_URL}/uploads/${entry.image}`)}
+                                />
+                              ) : null
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                  {viewDuty.discountPercentage > 0 && (
+                    <>
+                      <p><strong>Discount:</strong> {viewDuty.discountPercentage}%</p>
+                      {viewDuty.discountRemark && (
+                        <p className="italic text-gray-600">Remark: {viewDuty.discountRemark}</p>
+                      )}
+                    </>
+                  )}
+                  {viewDuty.charges === 'Chargeable' ? (
+                    <p className="font-semibold border-t mt-2 pt-1">
+                      Guest Total: ₹{viewDuty.guestCharge.total.toFixed(2)}
+                    </p>
+                  ) : (
+                    <p className="font-semibold border-t mt-2 pt-1">
+                      Guest Charges: {viewDuty.charges}
+                    </p>
+                  )}
+
+                  {/* Backend Charges */}
+                  <hr className="my-2" />
+                  <p className="font-semibold underline mb-1">Backend Charges</p>
+                  <p><strong>Base:</strong> ₹{viewDuty.backendCharge.base.toFixed(2)}</p>
+                  {viewDuty.backendCharge.extra > 0 && (
+                    <p><strong>Extra:</strong> ₹{viewDuty.backendCharge.extra.toFixed(2)}</p>
+                  )}
+                  <p><strong>Tax:</strong> ₹{viewDuty.backendCharge.tax.toFixed(2)}</p>
+
+                  {viewDuty.expenses &&
+                    ['parking', 'fuel', 'misc'].map((type) => {
+                      const entries = viewDuty.expenses[type]?.entries || [];
+
+                      const backendEntries = entries.filter((entry) => {
+                        if (entry.split === 'backend') return true;
+                        return viewDuty.verifiedExpenses?.some(
+                          (v) => v.label === type && v.type === 'backend' && v.amount === entry.amount
+                        );
+                      });
+
+                      if (backendEntries.length === 0) return null;
+
+                      const total = backendEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+                      return (
+                        <div key={type} className="mb-1">
+                          <p>
+                            <strong className="capitalize">{type}:</strong> ₹{total.toFixed(2)}
+                          </p>
+                          {/* Image thumbnails */}
+                          <div className="flex gap-1 flex-wrap mt-1">
+                            {backendEntries.map((entry, idx) =>
+                              entry.image ? (
+                                <img
+                                  key={idx}
+                                  src={`${BASE_URL}/uploads/${entry.image}`}
+                                  alt={`${type} ${idx + 1}`}
+                                  className="w-10 h-10 object-cover rounded border cursor-pointer"
+                                  onClick={() => setPreviewImage(`${BASE_URL}/uploads/${entry.image}`)}
+                                />
+                              ) : null
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                  <p className="font-semibold border-t mt-2 pt-1">
+                    Backend Total: ₹{viewDuty.backendCharge.total.toFixed(2)}
+                  </p>
+
+                  <p className="mt-3 text-center">Thank you for choosing our service!</p>
+                </div>
+
+                <hr className="my-2" />
+                <div className="text-center text-xs">Powered by Concierge Team</div>
+
+                {/* Close Button */}
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={closeModal}
+                    className="bg-gray-400 text-white px-4 py-2 rounded"
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {loading && (
-        <p className="text-center mt-4 text-gray-500">Loading report...</p>
+      {/* Image preview overlay */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[999]"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="max-w-[90%] max-h-[90%] rounded shadow-lg"
+          />
+        </div>
       )}
 
-      {/* View Modal */}
-      {viewingDuty && (
-        <ViewTransportModal
-          duty={viewingDuty}
-          onClose={() => setViewingDuty(null)}
-          showPrint={false}
-        />
-      )}
+      {loading && <p className="text-center mt-4 text-gray-500">Loading report...</p>}
     </div>
   );
 };
