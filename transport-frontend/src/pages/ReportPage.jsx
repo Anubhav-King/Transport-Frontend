@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../utils/api';
 import { useSettings } from '../context/SettingsContext';
@@ -11,6 +11,7 @@ const ReportPage = () => {
   const [range, setRange] = useState('today');
   const [dutyType, setDutyType] = useState('');
   const [carType, setCarType] = useState('');
+  const [packageCode, setPackageCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -20,7 +21,7 @@ const ReportPage = () => {
   const [modalLoading, setModalLoading] = useState(false);
 
   const token = localStorage.getItem('token');
-  const { dutyTypes, vehicleTypes } = useSettings();
+  const { dutyTypes, vehicleTypes, localUsePackages } = useSettings();
 
   const paginatedSummary = summary.slice(
     (currentPage - 1) * itemsPerPage,
@@ -29,15 +30,17 @@ const ReportPage = () => {
   const totalPages = Math.ceil(summary.length / itemsPerPage);
 
   const getPackageLabel = (code) => {
-    const pkg = settings?.localUsePackages?.find(p => p.label === code);
+    const pkg = localUsePackages?.find(p => p.code === code || p.label === code);
     return pkg ? pkg.label : code;
   };
+
   const fetchReport = async () => {
     setLoading(true);
     try {
       const params = { range };
       if (dutyType) params.dutyType = dutyType;
       if (carType) params.carType = carType;
+      if (packageCode) params.packageCode = packageCode;
 
       const res = await axios.get(`${BASE_URL}/api/reports`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -74,7 +77,7 @@ const ReportPage = () => {
   useEffect(() => {
     setCurrentPage(1);
     fetchReport();
-  }, [range, dutyType, carType]);
+  }, [range, dutyType, carType, packageCode]);
 
   const handleExportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
@@ -87,6 +90,7 @@ const ReportPage = () => {
       { header: "Vehicle Type", key: "vehicleType", width: 18 },
       { header: "Guest Charge", key: "guestCharge", width: 15 },
       { header: "Backend Charge", key: "backendCharge", width: 15 },
+      { header: "Profit", key: "profit", width: 15 },
     ];
 
     summary.forEach((row) => {
@@ -97,6 +101,7 @@ const ReportPage = () => {
         vehicleType: row.vehicleType,
         guestCharge: row.guestCharge.toFixed(2),
         backendCharge: row.backendCharge.toFixed(2),
+        profit: (row.guestCharge - row.backendCharge).toFixed(2),
       });
     });
 
@@ -105,15 +110,16 @@ const ReportPage = () => {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 
-    saveAs(blob, `Trip_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const today = new Date();
+    const fileName = `Trip_Report_${today.toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`;
+    saveAs(blob, fileName);
   };
-  // Modal close handler
+
   const closeModal = () => {
     setModalOpen(false);
     setViewDuty(null);
   };
 
-  // Preview image state (for images inside modal)
   const [previewImage, setPreviewImage] = useState(null);
 
   return (
@@ -129,7 +135,7 @@ const ReportPage = () => {
         </button>
       </div>
 
-{/* Filters */}
+      {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <select
           value={range}
@@ -155,6 +161,7 @@ const ReportPage = () => {
               </option>
             ))}
         </select>
+
         <select
           value={carType}
           onChange={(e) => setCarType(e.target.value)}
@@ -168,9 +175,24 @@ const ReportPage = () => {
               </option>
             ))}
         </select>
+
+        {dutyType === 'Local Use' && (
+          <select
+            value={packageCode}
+            onChange={(e) => setPackageCode(e.target.value)}
+            className="border px-3 py-2 rounded"
+          >
+            <option value="">All Packages</option>
+            {localUsePackages?.map((pkg) => (
+              <option key={pkg.code} value={pkg.code}>
+                {pkg.label}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
-      {/* Revenue Bifurcation */}
+      {/* Revenue Summary */}
       {totals && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-3">Revenue Summary</h2>
@@ -181,33 +203,21 @@ const ReportPage = () => {
                 className="border rounded p-4 shadow-sm bg-gray-50"
               >
                 <h3 className="font-bold mb-2">{type}</h3>
-                <p className="text-sm">
-                  Guest Revenue: ₹{data.guestTotal.toFixed(2)}
-                </p>
-                <p className="text-sm">
-                  Backend Cost: ₹{data.backendTotal.toFixed(2)}
-                </p>
-                <p className="text-sm font-medium text-green-700">
-                  Profit: ₹{data.profit.toFixed(2)}
-                </p>
+                <p className="text-sm">Guest Revenue: ₹{data.guestTotal.toFixed(2)}</p>
+                <p className="text-sm">Backend Cost: ₹{data.backendTotal.toFixed(2)}</p>
+                <p className="text-sm font-medium text-green-700">Profit: ₹{data.profit.toFixed(2)}</p>
               </div>
             ))}
-
             <div className="border rounded p-4 shadow-md bg-blue-100">
               <h3 className="font-bold mb-2">Grand Total</h3>
-              <p className="text-sm">
-                Guest Revenue: ₹{totals.grandTotal.guestTotal.toFixed(2)}
-              </p>
-              <p className="text-sm">
-                Backend Cost: ₹{totals.grandTotal.backendTotal.toFixed(2)}
-              </p>
-              <p className="text-sm font-bold text-blue-800">
-                Profit: ₹{totals.grandTotal.profit.toFixed(2)}
-              </p>
+              <p className="text-sm">Guest Revenue: ₹{totals.grandTotal.guestTotal.toFixed(2)}</p>
+              <p className="text-sm">Backend Cost: ₹{totals.grandTotal.backendTotal.toFixed(2)}</p>
+              <p className="text-sm font-bold text-blue-800">Profit: ₹{totals.grandTotal.profit.toFixed(2)}</p>
             </div>
           </div>
         </div>
       )}
+
       {/* Summary Table */}
       <div className="overflow-x-auto border rounded shadow">
         <table className="min-w-full text-sm text-left">
@@ -219,6 +229,7 @@ const ReportPage = () => {
               <th className="px-3 py-2 border">Vehicle</th>
               <th className="px-3 py-2 border">Guest Charge</th>
               <th className="px-3 py-2 border">Backend Charge</th>
+              <th className="px-3 py-2 border">Profit</th>
             </tr>
           </thead>
           <tbody>
@@ -235,11 +246,14 @@ const ReportPage = () => {
                 <td className="px-3 py-1 border">{row.vehicleType}</td>
                 <td className="px-3 py-1 border">₹{row.guestCharge.toFixed(2)}</td>
                 <td className="px-3 py-1 border">₹{row.backendCharge.toFixed(2)}</td>
+                <td className="px-3 py-1 border text-green-700">
+                  ₹{(row.guestCharge - row.backendCharge).toFixed(2)}
+                </td>
               </tr>
             ))}
             {summary.length === 0 && (
               <tr>
-                <td colSpan="6" className="text-center py-3">
+                <td colSpan="7" className="text-center py-3">
                   No data found for selected range.
                 </td>
               </tr>
