@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../utils/api';
 import { useSettings } from '../context/SettingsContext';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const ReportPage = () => {
   const [summary, setSummary] = useState([]);
@@ -50,9 +52,50 @@ const ReportPage = () => {
     fetchReport();
   }, [range, dutyType, carType]);
 
+  const handleExportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Trip Report');
+
+    worksheet.columns = [
+      { header: 'Date', key: 'date', width: 20 },
+      { header: 'Duty Type', key: 'dutyType', width: 18 },
+      { header: 'Vehicle Type', key: 'vehicleType', width: 18 },
+      { header: 'Guest Charge', key: 'guestCharge', width: 15 },
+      { header: 'Backend Charge', key: 'backendCharge', width: 15 },
+    ];
+
+    summary.forEach((row) => {
+      worksheet.addRow({
+        date: row.date,
+        dutyType: row.dutyType,
+        vehicleType: row.vehicleType,
+        guestCharge: row.guestCharge.toFixed(2),
+        backendCharge: row.backendCharge.toFixed(2),
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    saveAs(blob, `Trip_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-center">Trip Report</h1>
+
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleExportToExcel}
+          className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+        >
+          Export to Excel
+        </button>
+      </div>
+
 
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

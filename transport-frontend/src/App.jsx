@@ -16,6 +16,8 @@ import { useSettings } from './context/SettingsContext';
 import { useEffect } from 'react';
 import ManageSettings from './pages/ManageSettings';
 import ReportPage from './pages/ReportPage';
+import AdminUserLogs from './pages/AdminUserLogs'
+
 
 const App = () => {
   const token = localStorage.getItem('token');
@@ -45,6 +47,7 @@ const App = () => {
         <Route path="/manage-settings" element={<ManageSettings />} />
         <Route path="/report" element={<ReportPage />} />
         <Route path="/*" element={token ? <DashboardRouter /> : <Navigate to="/login" />} />
+        <Route path="/adminactivitylogs" element={<AdminUserLogs />} />
       </Routes>
     </>
   );

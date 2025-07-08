@@ -3,7 +3,7 @@ import axios from 'axios';
 import { BASE_URL } from '../utils/api';
 
 const AdminLogs = () => {
-  const [logType, setLogType] = useState('availability'); // availability | setting
+  const [logType, setLogType] = useState('availability'); // availability | setting | roles
   const [logs, setLogs] = useState([]);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const token = localStorage.getItem('token');
@@ -13,8 +13,10 @@ const AdminLogs = () => {
       let url = '';
       if (logType === 'availability') {
         url = `${BASE_URL}/api/fleet/logs?date=${date}`;
-      } else {
+      } else if (logType === 'setting') {
         url = `${BASE_URL}/api/settings/logs`;
+      } else if (logType === 'roles') {
+        url = `${BASE_URL}/api/auth/role-change-logs`;
       }
 
       const res = await axios.get(url, {
@@ -49,6 +51,12 @@ const AdminLogs = () => {
           className={`px-4 py-2 rounded ${logType === 'setting' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
         >
           Setting Change Logs
+        </button>
+        <button
+          onClick={() => setLogType('roles')}
+          className={`px-4 py-2 rounded ${logType === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          Role Change Logs
         </button>
       </div>
 
@@ -97,7 +105,7 @@ const AdminLogs = () => {
             )}
           </tbody>
         </table>
-      ) : (
+      ) : logType === 'setting' ? (
         <table className="w-full border text-sm">
           <thead className="bg-gray-100">
             <tr>
@@ -123,6 +131,34 @@ const AdminLogs = () => {
             {logs.length === 0 && (
               <tr>
                 <td colSpan="5" className="text-center py-2">No setting logs found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      ) : (
+        <table className="w-full border text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-2 py-1">Timestamp</th>
+              <th className="border px-2 py-1">User</th>
+              <th className="border px-2 py-1">Changed By</th>
+              <th className="border px-2 py-1">Old Roles</th>
+              <th className="border px-2 py-1">New Roles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.map((log) => (
+              <tr key={log._id}>
+                <td className="border px-2 py-1">{new Date(log.timestamp).toLocaleString()}</td>
+                <td className="border px-2 py-1">{log.userId?.name || 'N/A'}</td>
+                <td className="border px-2 py-1">{log.changedBy?.name || 'N/A'}</td>
+                <td className="border px-2 py-1">{(log.oldRoles || []).join(', ')}</td>
+                <td className="border px-2 py-1">{(log.newRoles || []).join(', ')}</td>
+              </tr>
+            ))}
+            {logs.length === 0 && (
+              <tr>
+                <td colSpan="5" className="text-center py-2">No role change logs found.</td>
               </tr>
             )}
           </tbody>
