@@ -150,8 +150,8 @@ const AdminLogs = () => {
             {logs.map((log) => (
               <tr key={log._id}>
                 <td className="border px-2 py-1">{new Date(log.timestamp).toLocaleString()}</td>
-                <td className="border px-2 py-1">{log.userId?.name || 'N/A'}</td>
-                <td className="border px-2 py-1">{log.changedBy?.name || 'N/A'}</td>
+                <td className="border px-2 py-1">{log.userId?.name ?? 'N/A'}</td>
+                <td className="border px-2 py-1">{log.changedBy?.name ?? 'N/A'}</td>
                 <td className="border px-2 py-1">{(log.oldRoles || []).join(', ')}</td>
                 <td className="border px-2 py-1">{(log.newRoles || []).join(', ')}</td>
               </tr>

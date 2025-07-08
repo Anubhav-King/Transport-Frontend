@@ -13,7 +13,7 @@ export const SettingsProvider = ({ children }) => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("Missing token");
+        if (!token) return; // 🔁 wait until token is available
 
         const res = await axios.get(`${BASE_URL}/api/settings/all`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -32,6 +32,7 @@ export const SettingsProvider = ({ children }) => {
           }
         });
 
+        //console.log("✅ Settings loaded:", settingMap);
         setSettings(settingMap);
       } catch (err) {
         console.error("Error loading settings:", err);
@@ -41,7 +42,15 @@ export const SettingsProvider = ({ children }) => {
       }
     };
 
-    fetchSettings();
+    const interval = setInterval(() => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchSettings();
+        clearInterval(interval);
+      }
+    }, 300); // Check every 300ms until token appears
+
+    return () => clearInterval(interval);
   }, []); // ✅ fetch only once on mount
 
   const contextValue = {

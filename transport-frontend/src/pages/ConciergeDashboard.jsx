@@ -60,12 +60,6 @@ const ConciergeDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDuties();
-    const interval = setInterval(fetchDuties, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
   useAutoRefresh(fetchDuties);
 
   const handleCancelDuty = async (id) => {
@@ -106,7 +100,7 @@ const ConciergeDashboard = () => {
     const isCancelled = duty.status === "cancelled";
 
     if (tab === "today") {
-      if (!isCompleted && !isCancelled) return true;
+      if (!isCompleted && !isCancelled && pickupDate === today ) return true;
       if (isCompleted) return endDate === today;
       if (isCancelled) return pickupDate === today;
       return false;
@@ -122,6 +116,10 @@ const ConciergeDashboard = () => {
         return pickupDate && pickupDate < today;
       }
       return false;
+    }
+
+    if (tab === "future") {
+      return pickupDate > today;
     }
 
     return false;
@@ -160,6 +158,12 @@ const ConciergeDashboard = () => {
             className={`px-4 py-2 rounded ${tab === "today" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
           >
             Today's Duties
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${tab === 'future' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            onClick={() => setTab('future')}
+          >
+            Future Duties
           </button>
           <button
             onClick={() => setTab("previous")}

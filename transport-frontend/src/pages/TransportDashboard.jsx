@@ -120,18 +120,16 @@ const TransportDashboard = () => {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const filteredDuties = duties.filter((duty) => {
+  const filteredDuties = duties
+  .filter((duty) => {
     const pickupDate = new Date(duty.pickupDateTime).toISOString().slice(0, 10);
     const endDate = duty.endTime ? new Date(duty.endTime).toISOString().slice(0, 10) : null;
     const isCompleted = duty.status === "completed";
     const isCancelled = duty.status === "cancelled";
 
     if (tab === "today") {
-      // Always show non-completed & non-cancelled duties regardless of date
-      if (!isCompleted && !isCancelled) return true;
-      // Show completed duties only if ended today
+      if (!isCompleted && !isCancelled && pickupDate === today) return true;
       if (isCompleted) return endDate === today;
-      // Show cancelled duties if they are from today (you can decide how to check date for cancelled)
       if (isCancelled) return pickupDate === today;
       return false;
     }
@@ -141,7 +139,6 @@ const TransportDashboard = () => {
         if (dateFilter) return endDate === dateFilter;
         return endDate && endDate < today;
       }
-      // Also include cancelled duties for previous tab if needed
       if (isCancelled) {
         if (dateFilter) return pickupDate === dateFilter;
         return pickupDate && pickupDate < today;
@@ -149,13 +146,16 @@ const TransportDashboard = () => {
       return false;
     }
 
+    if (tab === "future") {
+      return pickupDate > today;
+    }
+
     return false;
-  }).filter((duty) => {
+  })
+  .filter((duty) => {
     if (statusFilter === "all") return true;
     return duty.status === statusFilter.toLowerCase();
   });
-
-
 
   const handleSave = async (id) => {
     try {
@@ -165,6 +165,7 @@ const TransportDashboard = () => {
       setEditDutyId(null);
       setEditFields({ carNumber: '', chauffeurName: '' });
       fetchDuties();
+      triggerRefresh();
     } catch {
       alert('Failed to update duty');
     }
@@ -186,40 +187,74 @@ const TransportDashboard = () => {
 
   const renderActionButtons = (duty) => {
     const isEditing = editDutyId === duty._id;
-
     if (['pending', 'active'].includes(duty.status)) {
-      return isEditing ? (
+      if (isEditing) {
+        return (
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => handleSave(duty._id)}
+              className="text-green-600 underline text-sm"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => {
+                setEditDutyId(null);
+                setEditFields({ carNumber: '', chauffeurName: '', status: duty.status });
+              }}
+              className="text-gray-500 underline text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      }
+
+      return (
         <div className="flex gap-2 justify-center">
           <button
-            onClick={() => handleSave(duty._id)}
-            className="text-green-600 underline text-sm"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => {
-              setEditDutyId(null);
-              setEditFields({ carNumber: '', chauffeurName: '' });
+            onClick={async () => {
+              setEditDutyId(duty._id);
+              setEditFields({
+                carNumber: duty.carNumber || '',
+                chauffeurName: duty.chauffeurName || '',
+                status: duty.status,
+              });
+              await fetchAvailableResources();
             }}
-            className="text-gray-500 underline text-sm"
+            className="text-blue-600 underline text-sm"
           >
-            Cancel
+            Edit
           </button>
+
+          {duty.status === 'active' && (
+            <button
+              onClick={async () => {
+                try {
+                  const payload = {
+                    carNumber: '',
+                    chauffeurName: '',
+                    status: 'pending',
+                  };
+
+                  await axios.patch(`${BASE_URL}/api/duties/${duty._id}`, payload, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+
+                  await fetchDuties();
+                  triggerRefresh();
+                } catch (err) {
+                  console.error("Failed to clear assignment:", err);
+                  alert("Failed to clear car and chauffeur");
+                }
+              }}
+              className="text-red-600 underline text-sm"
+              title="Remove assigned car and chauffeur"
+            >
+              Clear
+            </button>
+          )}
         </div>
-      ) : (
-        <button
-          onClick={async () => {
-            setEditDutyId(duty._id);
-            setEditFields({
-              carNumber: duty.carNumber || '',
-              chauffeurName: duty.chauffeurName || '',
-            });
-            await fetchAvailableResources();
-          }}
-          className="text-blue-600 underline text-sm"
-        >
-          Edit
-        </button>
       );
     }
 
@@ -271,6 +306,12 @@ const TransportDashboard = () => {
         <div className="space-x-2">
           <button onClick={() => setTab('today')} className={`px-4 py-2 rounded ${tab === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
             Today's Duties
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${tab === 'future' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            onClick={() => setTab('future')}
+          >
+            Future Duties
           </button>
           <button onClick={() => setTab('previous')} className={`px-4 py-2 rounded ${tab === 'previous' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
             Previous Duties

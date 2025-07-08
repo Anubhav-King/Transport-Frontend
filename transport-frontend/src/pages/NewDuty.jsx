@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BASE_URL } from '../utils/api';
 import { useSettings } from '../context/SettingsContext';
+import { useEvent } from "../context/EventContext";
 
 const NewDuty = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user'));
   const { settings } = useSettings();
+  const { triggerRefresh } = useEvent();
   const {
     dutyTypes = [],
     vehicleTypes = [],
@@ -217,12 +219,29 @@ const NewDuty = () => {
     });
 
     try {
-      console.log("Submitting payload:", payload);
+      //console.log("Submitting payload:", payload);
       await axios.post(`${BASE_URL}/api/duties`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      triggerRefresh();
       alert('Duty created successfully');
-      navigate('/');
+      const role = localStorage.getItem('activeRole');
+      switch (role) {
+        case 'Admin':
+          navigate('/admin');
+          break;
+        case 'Concierge':
+          navigate('/concierge');
+          break;
+        case 'Transport':
+          navigate('/transport');
+          break;
+        case 'Chauffeur':
+          navigate('/chauffeur');
+          break;
+        default:
+          navigate('/dashboard');
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to create duty');
@@ -238,7 +257,7 @@ const NewDuty = () => {
 
         <div>
           <label className="block text-sm font-medium mb-1">Request Date</label>
-          <input type="date" name="requestDate" value={form.requestDate} onChange={handleChange} required className="border p-2 rounded w-full" />
+          <input type="date" name="requestDate" value={form.requestDate} onChange={handleChange} required min={new Date().toISOString().split("T")[0]} className="border p-2 rounded w-full" />
         </div>
 
         <div>

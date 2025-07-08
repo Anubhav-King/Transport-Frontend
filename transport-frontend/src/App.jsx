@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import DashboardRouter from './pages/DashboardRouter';
 import Login from './pages/Login';
@@ -16,18 +16,35 @@ import { useSettings } from './context/SettingsContext';
 import { useEffect } from 'react';
 import ManageSettings from './pages/ManageSettings';
 import ReportPage from './pages/ReportPage';
-import AdminUserLogs from './pages/AdminUserLogs'
-
+import AdminUserLogs from './pages/AdminUserLogs';
+import { jwtDecode } from 'jwt-decode';
 
 const App = () => {
   const token = localStorage.getItem('token');
   const location = useLocation();
+  const navigate = useNavigate();
   const hideNavbarOn = ['/login', '/register-admin'];
 
-
   useEffect(() => {
-    
-  }, []);
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const isExpired = decoded.exp * 1000 < Date.now();
+
+        if (isExpired) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('activeRole');
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('Invalid token:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('activeRole');
+        navigate('/login');
+      }
+    }
+  }, [token, navigate]);
+
   return (
     <>
       {!hideNavbarOn.includes(location.pathname) && token && <Navbar />}
@@ -46,8 +63,8 @@ const App = () => {
         <Route path="/AdminLogs" element={<AdminLogs />} />
         <Route path="/manage-settings" element={<ManageSettings />} />
         <Route path="/report" element={<ReportPage />} />
-        <Route path="/*" element={token ? <DashboardRouter /> : <Navigate to="/login" />} />
         <Route path="/adminactivitylogs" element={<AdminUserLogs />} />
+        <Route path="/*" element={token ? <DashboardRouter /> : <Navigate to="/login" />} />
       </Routes>
     </>
   );

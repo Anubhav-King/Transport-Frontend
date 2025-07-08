@@ -11,7 +11,7 @@ const AdminLogsPage = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/auth/role-change-logs`, {
+      const res = await axios.get(`${BASE_URL}/api/adminRoutes/activity-logs`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setLogs(res.data);
@@ -50,7 +50,7 @@ const AdminLogsPage = () => {
                   <td className="px-3 py-1 border whitespace-nowrap">
                     {new Date(log.timestamp).toLocaleString('en-GB')}
                   </td>
-                  <td className="px-3 py-1 border">{log.userId?.name || 'N/A'}</td>
+                  <td className="px-3 py-1 border">{log.userName || log.userId?.name || 'N/A'}</td>
                   <td className="px-3 py-1 border">{log.role}</td>
                   <td className="px-3 py-1 border">{log.action}</td>
                 </tr>
