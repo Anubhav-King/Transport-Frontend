@@ -81,7 +81,7 @@ const ReportPage = () => {
     const worksheet = workbook.addWorksheet("Trip Report");
 
     worksheet.columns = [
-      { header: "Trip ID", key: "tripId", width: 15 },
+      { header: "Trip ID", key: "tripID", width: 15 },
       { header: "Date", key: "date", width: 20 },
       { header: "Duty Type", key: "dutyType", width: 18 },
       { header: "Vehicle Type", key: "vehicleType", width: 18 },
@@ -91,7 +91,7 @@ const ReportPage = () => {
 
     summary.forEach((row) => {
       worksheet.addRow({
-        tripId: row._id || "",
+        tripID: row._id || "",
         date: row.date,
         dutyType: row.dutyType,
         vehicleType: row.vehicleType,
@@ -226,9 +226,9 @@ const ReportPage = () => {
               <tr key={idx} className="even:bg-gray-50">
                 <td
                   className="px-3 py-1 border text-blue-600 cursor-pointer underline"
-                  onClick={() => fetchDutyById(row.tripId)}
+                  onClick={() => fetchDutyById(row.tripID)}
                 >
-                  {row.tripId}
+                  {row.tripID}
                 </td>
                 <td className="px-3 py-1 border">{row.date}</td>
                 <td className="px-3 py-1 border">{row.dutyType}</td>
