@@ -237,9 +237,9 @@ const ReportPage = () => {
               <tr key={idx} className="even:bg-gray-50">
                 <td
                   className="px-3 py-1 border text-blue-600 cursor-pointer underline"
-                  onClick={() => fetchDutyById(row.tripID)}
+                  onClick={() => fetchDutyById(row._id)}
                 >
-                  {row.tripID}
+                  {row._id}
                 </td>
                 <td className="px-3 py-1 border">{row.date}</td>
                 <td className="px-3 py-1 border">{row.dutyType}</td>
