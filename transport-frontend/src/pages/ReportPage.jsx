@@ -97,7 +97,7 @@ const ReportPage = () => {
 
     summary.forEach((row) => {
       worksheet.addRow({
-        tripID: row._id || "",
+        tripID: row.tripID || "",
         date: row.date,
         dutyType: row.dutyType,
         vehicleType: row.vehicleType,
@@ -253,7 +253,7 @@ const ReportPage = () => {
                   className="px-3 py-1 border text-blue-600 cursor-pointer underline"
                   onClick={() => fetchDutyById(row._id)}
                 >
-                  {row._id}
+                  {row.tripID}
                 </td>
                 <td className="px-3 py-1 border">{row.date}</td>
                 <td className="px-3 py-1 border">{row.dutyType}</td>
