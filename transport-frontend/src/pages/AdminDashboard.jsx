@@ -27,12 +27,21 @@ const AdminDashboard = () => {
   };
 
   const handleAddUser = async () => {
-    if (!name.trim() || !mobile.trim()) return;
+    const trimmedName = name.trim();
+    const trimmedMobile = mobile.trim();
+
+    if (!trimmedName || !trimmedMobile) return;
+
+    if (!/^[6-9]\d{9}$/.test(trimmedMobile)) {
+      alert("Please enter a valid 10-digit Indian mobile number starting with 6-9");
+      return;
+    }
+
     try {
       setLoading(true);
       await axios.post(`${BASE_URL}/api/auth/register`, {
-        name,
-        mobile,
+        name: trimmedName,
+        mobile: trimmedMobile,
         role,
       }, {
         headers: { Authorization: `Bearer ${token}` },
@@ -142,7 +151,16 @@ const AdminDashboard = () => {
         <h2 className="text-lg font-semibold mb-4">Add New User</h2>
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} className="border px-3 py-2 rounded w-full" />
-          <input type="text" placeholder="Mobile Number" value={mobile} onChange={(e) => setMobile(e.target.value)} className="border px-3 py-2 rounded w-full" />
+          <input
+            type="tel"
+            placeholder="Mobile Number"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            pattern="^[6-9]\d{9}$"
+            title="Enter a valid 10-digit Indian mobile number starting with 6-9"
+            required
+            className="border px-3 py-2 rounded w-full"
+          />
           <select value={role} onChange={(e) => setRole(e.target.value)} className="border px-3 py-2 rounded w-full">
             <option value="Concierge">Concierge</option>
             <option value="Transport">Transport</option>

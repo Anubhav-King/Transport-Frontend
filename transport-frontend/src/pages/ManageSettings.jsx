@@ -9,6 +9,9 @@ const ManageSettings = () => {
   const [newValues, setNewValues] = useState('');
   const [editingKey, setEditingKey] = useState(null);
   const [editValues, setEditValues] = useState('');
+  const [officeRoutes, setOfficeRoutes] = useState([]);
+  const [newRoute, setNewRoute] = useState({ route: '', guestCharge: '', backendCharge: '', popCharge: '' });
+
   const token = localStorage.getItem('token');
 
   const fetchSettings = async () => {
@@ -17,6 +20,8 @@ const ManageSettings = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSettings(res.data);
+      const officeSetting = res.data.find(s => s.key === 'officeTransferRoutes');
+      setOfficeRoutes(officeSetting?.values || []);
     } catch (err) {
       console.error('Error fetching settings:', err);
       alert('Failed to fetch settings');
@@ -99,8 +104,7 @@ const ManageSettings = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h2 className="text-2xl font-bold text-center mb-6">Manage Settings</h2>
-
-      {/* Add New Setting */}
+      {/* Add New Setting (Generic) */}
       <div className="border p-4 rounded shadow mb-8">
         <h3 className="text-lg font-semibold mb-4">Add New Setting</h3>
         <div className="flex flex-col sm:flex-row gap-4 mb-3">
@@ -167,44 +171,20 @@ const ManageSettings = () => {
                   <td className="border px-2 py-1 text-center space-y-1">
                     {editingKey === s.key ? (
                       <>
-                        <button
-                          onClick={() => handleSaveEdit(s.key)}
-                          className="text-green-700 mr-2"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingKey(null)}
-                          className="text-gray-500"
-                        >
-                          Cancel
-                        </button>
+                        <button onClick={() => handleSaveEdit(s.key)} className="text-green-700 mr-2">Save</button>
+                        <button onClick={() => setEditingKey(null)} className="text-gray-500">Cancel</button>
                       </>
                     ) : (
                       <>
-                        <button
-                          onClick={() => handleEdit(s.key, s.values)}
-                          className="text-blue-600 mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(s.key)}
-                          className="text-red-600"
-                        >
-                          Delete
-                        </button>
+                        <button onClick={() => handleEdit(s.key, s.values)} className="text-blue-600 mr-2">Edit</button>
+                        <button onClick={() => handleDelete(s.key)} className="text-red-600">Delete</button>
                       </>
                     )}
                   </td>
                 </tr>
               ))}
               {settings.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="text-center py-2">
-                    No settings found.
-                  </td>
-                </tr>
+                <tr><td colSpan="4" className="text-center py-2">No settings found.</td></tr>
               )}
             </tbody>
           </table>

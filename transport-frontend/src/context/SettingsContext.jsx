@@ -13,7 +13,7 @@ export const SettingsProvider = ({ children }) => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return; // 🔁 wait until token is available
+        if (!token) return;
 
         const res = await axios.get(`${BASE_URL}/api/settings/all`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -22,17 +22,18 @@ export const SettingsProvider = ({ children }) => {
         const settingMap = {};
         res.data.forEach((item) => {
           try {
-            const parsed = typeof item.values === 'string'
-              ? JSON.parse(item.values)
-              : item.values;
+            const parsed =
+              typeof item.values === "string"
+                ? JSON.parse(item.values)
+                : item.values;
             settingMap[item.key] = parsed;
           } catch (err) {
-            console.warn(`Failed to parse setting key "${item.key}":`, item.value);
-            settingMap[item.key] = item.value;
+            console.warn(`Failed to parse setting key "${item.key}":`, item.values);
+            settingMap[item.key] = item.values;
           }
         });
 
-        //console.log("✅ Settings loaded:", settingMap);
+        console.log("✅ Loaded Settings:", settingMap); // Add this for debug
         setSettings(settingMap);
       } catch (err) {
         console.error("Error loading settings:", err);
@@ -42,16 +43,9 @@ export const SettingsProvider = ({ children }) => {
       }
     };
 
-    const interval = setInterval(() => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        fetchSettings();
-        clearInterval(interval);
-      }
-    }, 300); // Check every 300ms until token appears
+    fetchSettings(); // Call directly once
+  }, []);
 
-    return () => clearInterval(interval);
-  }, []); // ✅ fetch only once on mount
 
   const contextValue = {
     settings,

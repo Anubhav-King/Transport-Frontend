@@ -17,11 +17,10 @@ const NewDuty = () => {
     localUsePackages = [],
     guestCharges = {},
     localUseCharges = {},
+    officeTransferRoutes = [],
   } = settings;
+  console.log("Office Routes:", officeTransferRoutes);
 
-  useEffect(() => {
-    
-  }, []);
 
   const [form, setForm] = useState({
     requestDate: '',
@@ -38,6 +37,7 @@ const NewDuty = () => {
     remarks: '',
     pickupLocation: '',
     dropLocation: '',
+    officeRoute: '',
     discount: '',
     discountRemark: '',
     charges: 'Chargeable',
@@ -47,7 +47,7 @@ const NewDuty = () => {
   const [finalGuestCharge, setFinalGuestCharge] = useState(0);
 
   useEffect(() => {
-    const { dutyType, vehicleType, localUsePackage, discount, charges } = form;
+    const { dutyType, vehicleType, localUsePackage, discount, charges, officeRoute } = form;
 
     if (!dutyType || !vehicleType || !charges) {
       setGuestCharge(0);
@@ -76,6 +76,15 @@ const NewDuty = () => {
       }
 
       baseCharge = localUseCharges[localUsePackage][vehicleType].guestCharge;
+    } else if (dutyType === 'Office Transfer') {
+      const selectedRoute = officeTransferRoutes.find(route => route.routeName === officeRoute);
+      if (!selectedRoute || !selectedRoute.rates || !selectedRoute.rates[vehicleType]) {
+        setGuestCharge(0);
+        setFinalGuestCharge(0);
+        return;
+      }
+
+      baseCharge = selectedRoute.rates[vehicleType].guestCharge;
     } else {
       if (
         Object.keys(guestCharges).length === 0 ||
@@ -105,21 +114,47 @@ const NewDuty = () => {
     form.dutyType,
     form.vehicleType,
     form.localUsePackage,
+    form.officeRoute,
     form.discount,
     form.charges,
     guestCharges,
     localUseCharges,
+    officeTransferRoutes,
   ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === 'dutyType' && value !== 'Local Use') {
-      setForm(prev => ({
-        ...prev,
+    if (name === 'dutyType') {
+      const updatedForm = {
+        ...form,
         dutyType: value,
         localUsePackage: '',
-      }));
+        pickupLocation: '',
+        dropLocation: '',
+        officeRoute: '',
+      };
+      setForm(updatedForm);
+      return;
+    }
+
+    if (name === 'officeRoute') {
+      const selectedRoute = officeTransferRoutes.find(r => r.routeName === value);
+      if (selectedRoute) {
+        setForm(prev => ({
+          ...prev,
+          officeRoute: value,
+          pickupLocation: selectedRoute.pickup,
+          dropLocation: selectedRoute.drop,
+        }));
+      } else {
+        setForm(prev => ({
+          ...prev,
+          officeRoute: value,
+          pickupLocation: '',
+          dropLocation: '',
+        }));
+      }
       return;
     }
 
@@ -140,7 +175,13 @@ const NewDuty = () => {
     }
 
     const pickupDateTime = new Date(`${form.requestDate}T${form.requestedTime}`);
-    const packageCode = form.dutyType === 'Local Use' ? form.localUsePackage : form.dutyType;
+    const packageCode =
+      form.dutyType === 'Local Use'
+        ? form.localUsePackage
+        : form.dutyType === 'Office Transfer'
+        ? form.officeRoute
+        : form.dutyType;
+
     const guestMobile = form.guestType === 'In House'
       ? `Room ${form.roomNumber}`
       : form.mobileNumber;
@@ -188,16 +229,18 @@ const NewDuty = () => {
       total: 0,
     };
 
+    
+
     const payload = {
       guestName: form.guestName,
       guestMobile,
       guestType: form.guestType,
       roomNumber: form.guestType === 'In House' ? form.roomNumber : undefined,
-        mobileNumber: form.guestType !== 'In House' ? form.mobileNumber : undefined,
+      mobileNumber: form.guestType !== 'In House' ? form.mobileNumber : undefined,
       dutyType: form.dutyType,
       pickupDateTime,
-      pickupLocation: form.dutyType === 'Office Transfer' ? form.pickupLocation : undefined,
-      dropLocation: form.dutyType === 'Office Transfer' ? form.dropLocation : undefined,
+      pickupLocation: form.pickupLocation,
+      dropLocation: form.dropLocation,
       vehicleType: form.vehicleType,
       packageCode,
       specialRequest: form.remarks,
@@ -222,7 +265,6 @@ const NewDuty = () => {
     });
 
     try {
-      //console.log("Submitting payload:", payload);
       await axios.post(`${BASE_URL}/api/duties`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -286,10 +328,19 @@ const NewDuty = () => {
         )}
 
         {(form.guestType === 'Expected Arrival' || form.guestType === 'Non-Resident') && (
-          <div>
-            <label className="block text-sm font-medium mb-1">Mobile Number</label>
-            <input type="text" name="mobileNumber" value={form.mobileNumber} onChange={handleChange} required className="border p-2 rounded w-full" />
-          </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Mobile Number</label>
+        <input
+          type="tel"
+          name="mobileNumber"
+          value={form.mobileNumber}
+          onChange={handleChange}
+          required
+          pattern="^\+\d{1,4}\d{6,14}$"
+          title="Enter a valid phone number with country code (e.g., +919876543210)"
+          className="border p-2 rounded w-full"
+        />
+      </div>
         )}
 
         <div className="col-span-2 font-semibold text-lg mt-4">Duty Details</div>
@@ -303,6 +354,25 @@ const NewDuty = () => {
             ))}
           </select>
         </div>
+        {form.dutyType === 'Office Transfer' && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Office Route</label>
+            <select
+              name="officeRoute"
+              value={form.officeRoute}
+              onChange={handleChange}
+              required
+              className="border p-2 rounded w-full"
+            >
+              <option value="">Select Office Route</option>
+              {officeTransferRoutes.map((route) => (
+                <option key={route.routeName} value={route.routeName}>
+                  {route.routeName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {form.dutyType === 'Local Use' && (
           <div>
