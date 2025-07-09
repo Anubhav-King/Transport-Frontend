@@ -168,7 +168,9 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+      {users
+        .filter((user) => user._id !== '686e1c8a29363eafade20688')
+        .map((user) => (
                 <tr key={user._id}>
                   <td className="border px-2 py-1">{user.name}</td>
                   <td className="border px-2 py-1">{user.mobile}</td>
