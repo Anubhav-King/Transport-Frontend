@@ -199,6 +199,12 @@ const ChauffeurDashboard = () => {
       {tab === 'current' && currentDuty && (
         <div className="bg-white shadow-md rounded p-4 border space-y-2 mb-6">
           <p><strong>Guest:</strong> {currentDuty.guestName}</p>
+          <p>
+            <strong>{currentDuty.guestType === "In House" ? "Room" : "Mobile"}:</strong>{" "}
+            {currentDuty.guestType === "In House"
+              ? currentDuty.roomNumber || "N/A"
+              : currentDuty.mobileNumber || "N/A"}
+          </p>
           <p><strong>Duty Type:</strong> {currentDuty.dutyType}</p>
           <p><strong>Package:</strong> {getPackageLabel()}</p>
           <p><strong>Vehicle:</strong> {currentDuty.vehicleType}</p>

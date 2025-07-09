@@ -11,7 +11,8 @@ import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
 const TransportDashboard = () => {
   const [duties, setDuties] = useState([]);
-  const { triggerRefresh } = useEvent();
+  const { triggerRefresh, refreshTrigger } = useEvent();
+;
   const [tab, setTab] = useState('today');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
@@ -56,6 +57,9 @@ const TransportDashboard = () => {
     }
   };
   useAutoRefresh(fetchDuties);
+  useEffect(() => {
+    fetchDuties(); // 🔁 This ensures data refreshes on external trigger
+  }, [refreshTrigger])
   const fetchAvailableResources = async () => {
     try {
       const [carRes, chauffeurRes] = await Promise.all([
@@ -75,12 +79,6 @@ const TransportDashboard = () => {
       console.error('Error loading resources:', err);
     }
   };
-
-  useEffect(() => {
-    fetchDuties();
-    const interval = setInterval(fetchDuties, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (!verifyModalDuty) return;
@@ -339,6 +337,8 @@ const TransportDashboard = () => {
         <thead className="bg-gray-100">
           <tr>
             <th className="border px-2 py-1">Trip ID</th>
+            <th className="border px-2 py-1">Guest Type</th>
+            <th className="border px-2 py-1">Room / Mobile</th>
             <th className="border px-2 py-1">Guest</th>
             <th className="border px-2 py-1">Type</th>
             <th className="border px-2 py-1">Pickup</th>
@@ -355,6 +355,12 @@ const TransportDashboard = () => {
           {filteredDuties.map((duty) => (
             <tr key={duty._id} className={duty.status === 'completed' ? 'bg-green-50' : ''}>
               <td className="border px-2 py-1">{duty.tripID}</td>
+              <td className="border px-2 py-1">{duty.guestType}</td>
+              <td className="border px-2 py-1">
+                {duty.guestType === "In House"
+                  ? duty.roomNumber
+                  : duty.mobileNumber}
+              </td>
               <td className="border px-2 py-1">{duty.guestName}</td>
               <td className="border px-2 py-1">{duty.dutyType}</td>
               <td className="border px-2 py-1">
@@ -1061,6 +1067,12 @@ const TransportDashboard = () => {
             {/* Duty Info */}
             <div className="text-xs">
               <p><strong>Guest:</strong> {viewDuty.guestName}</p>
+              <p>
+                <strong>{viewDuty.guestType === "In House" ? "Room" : "Mobile"}:</strong>{" "}
+                {viewDuty.guestType === "In House"
+                  ? viewDuty.roomNumber || "N/A"
+                  : viewDuty.mobileNumber || "N/A"}
+              </p>
               <p><strong>Duty Type:</strong> {viewDuty.dutyType}</p>
               <p><strong>Vehicle:</strong> {viewDuty.vehicleType} ({viewDuty.carNumber})</p>
               <p><strong>Pickup:</strong> {new Date(viewDuty.pickupDateTime).toLocaleString("en-GB")}</p>

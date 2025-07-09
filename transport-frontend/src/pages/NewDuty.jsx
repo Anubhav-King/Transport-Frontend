@@ -191,6 +191,9 @@ const NewDuty = () => {
     const payload = {
       guestName: form.guestName,
       guestMobile,
+      guestType: form.guestType,
+      roomNumber: form.guestType === 'In House' ? form.roomNumber : undefined,
+        mobileNumber: form.guestType !== 'In House' ? form.mobileNumber : undefined,
       dutyType: form.dutyType,
       pickupDateTime,
       pickupLocation: form.dutyType === 'Office Transfer' ? form.pickupLocation : undefined,

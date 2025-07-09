@@ -11,7 +11,7 @@ const ConciergeDashboard = () => {
   const [duties, setDuties] = useState([]);
   const [tab, setTab] = useState("today");
   const [statusFilter, setStatusFilter] = useState("all");
-  const { triggerRefresh } = useEvent();
+  const { triggerRefresh, refreshTrigger } = useEvent();
   const [dateFilter, setDateFilter] = useState("");
   const [showReason, setShowReason] = useState(null);
   const [verifyModalDuty, setVerifyModalDuty] = useState(null);
@@ -61,6 +61,9 @@ const ConciergeDashboard = () => {
   };
 
   useAutoRefresh(fetchDuties);
+  useEffect(() => {
+    fetchDuties();
+  }, [refreshTrigger]);
 
   const handleCancelDuty = async (id) => {
     const reason = prompt("Enter cancellation reason:");
@@ -220,6 +223,8 @@ const ConciergeDashboard = () => {
         <thead className="bg-gray-100">
           <tr>
             <th className="border px-2 py-1">Trip ID</th>
+            <th className="border px-2 py-1">Guest Type</th>
+            <th className="border px-2 py-1">Room / Mobile</th>
             <th className="border px-2 py-1">Guest</th>
             <th className="border px-2 py-1">Type</th>
             <th className="border px-2 py-1">Pickup</th>
@@ -234,6 +239,12 @@ const ConciergeDashboard = () => {
           {filteredDuties.map((duty) => (
             <tr key={duty._id}>
               <td className="border px-2 py-1">{duty.tripID}</td>
+              <td className="border px-2 py-1">{duty.guestType}</td>
+              <td className="border px-2 py-1">
+                {duty.guestType === "In House"
+                  ? duty.roomNumber
+                  : duty.mobileNumber}
+              </td>
               <td className="border px-2 py-1">{duty.guestName}</td>
               <td className="border px-2 py-1">{duty.dutyType}</td>
               <td className="border px-2 py-1">{new Date(duty.pickupDateTime).toLocaleString("en-GB")}</td>
@@ -261,19 +272,56 @@ const ConciergeDashboard = () => {
                   : duty.charges || "N/A"}
               </td>
               <td className="border px-2 py-1 text-center">
-                {["pending", "active"].includes(duty.status) ? (
-                  <button onClick={() => handleCancelDuty(duty._id)} className="text-red-600 underline text-sm">Cancel</button>
+                {duty.status === "active" ? (
+                  <>
+                    <button
+                      onClick={() => setViewingDuty(duty)}
+                      className="text-blue-600 underline text-sm mr-2"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleCancelDuty(duty._id)}
+                      className="text-red-600 underline text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : duty.status === "pending" ? (
+                  <button
+                    onClick={() => handleCancelDuty(duty._id)}
+                    className="text-red-600 underline text-sm"
+                  >
+                    Cancel
+                  </button>
                 ) : duty.status === "cancelled" && duty.cancellationReason ? (
-                  <button onClick={() => setShowReason(duty.cancellationReason)} className="text-blue-600 underline text-sm">View Reason</button>
+                  <button
+                    onClick={() => setShowReason(duty.cancellationReason)}
+                    className="text-blue-600 underline text-sm"
+                  >
+                    View Reason
+                  </button>
                 ) : duty.status === "pending-verification-concierge" ? (
-                  <button onClick={() => {
-                    setVerifyModalDuty(duty);
-                    setDiscount(duty.discountPercentage || 0);
-                    setDiscountRemark(duty.discountRemark || "");
-                  }} className="text-green-600 underline text-sm">Verify</button>
+                  <button
+                    onClick={() => {
+                      setVerifyModalDuty(duty);
+                      setDiscount(duty.discountPercentage || 0);
+                      setDiscountRemark(duty.discountRemark || "");
+                    }}
+                    className="text-green-600 underline text-sm"
+                  >
+                    Verify
+                  </button>
                 ) : duty.status === "completed" ? (
-                  <button onClick={() => setViewingDuty(duty)} className="text-blue-600 underline text-sm">View / Print</button>
-                ) : "-"}
+                  <button
+                    onClick={() => setViewingDuty(duty)}
+                    className="text-blue-600 underline text-sm"
+                  >
+                    View / Print
+                  </button>
+                ) : (
+                  "-"
+                )}
               </td>
             </tr>
           ))}
@@ -886,6 +934,12 @@ const ConciergeDashboard = () => {
             {/* Duty Info */}
             <div className="text-xs">
               <p><strong>Guest:</strong> {viewingDuty.guestName}</p>
+              <p>
+                <strong>{viewingDuty.guestType === "In House" ? "Room" : "Mobile"}:</strong>{" "}
+                {viewingDuty.guestType === "In House"
+                  ? viewingDuty.roomNumber || "N/A"
+                  : viewingDuty.mobileNumber || "N/A"}
+              </p>
               <p><strong>Duty Type:</strong> {viewingDuty.dutyType}</p>
               <p><strong>Vehicle:</strong> {viewingDuty.vehicleType} ({viewingDuty.carNumber})</p>
               <p><strong>Request Date and Time:</strong> {new Date(viewingDuty.pickupDateTime).toLocaleString("en-GB")}</p>
