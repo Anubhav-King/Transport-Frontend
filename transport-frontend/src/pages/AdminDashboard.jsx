@@ -11,7 +11,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [roleBuffer, setRoleBuffer] = useState({});
-  const SHOW_MASTER_ADMIN = true; // 🔁 set false later
+  const SHOW_MASTER_ADMIN = false; // 🔁 set false later
 
 
   const token = localStorage.getItem('token');
