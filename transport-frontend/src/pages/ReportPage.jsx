@@ -102,6 +102,15 @@ useEffect(() => {
   fetchReport();
 }, [range, dutyType, carType, packageCode, fromDate, toDate]);
 
+  // Clear From/To dates when range is not "custom"
+useEffect(() => {
+  if (range !== "custom") {
+    setFromDate("");
+    setToDate("");
+  }
+}, [range]);
+
+
 
 
   const handleExportToExcel = async () => {
