@@ -160,21 +160,25 @@ useEffect(() => {
           <option value="yesterday">Yesterday</option>
           <option value="mtd">Month to Date</option>
           <option value="ytd">Year to Date</option>
+          <option value="custom">Custom Range</option>
+
         </select>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <input
-    type="date"
-    value={fromDate}
-    onChange={(e) => setFromDate(e.target.value)}
-    className="border px-3 py-2 rounded"
-  />
-  <input
-    type="date"
-    value={toDate}
-    onChange={(e) => setToDate(e.target.value)}
-    className="border px-3 py-2 rounded"
-  />
-</div>
+        {range === "custom" && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <input
+      type="date"
+      value={fromDate}
+      onChange={(e) => setFromDate(e.target.value)}
+      className="border px-3 py-2 rounded"
+    />
+    <input
+      type="date"
+      value={toDate}
+      onChange={(e) => setToDate(e.target.value)}
+      className="border px-3 py-2 rounded"
+    />
+  </div>
+)}
 
         <select
           value={dutyType}
