@@ -15,6 +15,9 @@ const ReportPage = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
 
   const [modalOpen, setModalOpen] = useState(false);
   const [viewDuty, setViewDuty] = useState(null);
@@ -39,7 +42,15 @@ const ReportPage = () => {
   const fetchReport = async () => {
     setLoading(true);
     try {
-      const params = { range };
+      const params = {};
+
+if (fromDate && toDate) {
+  params.fromDate = fromDate;
+  params.toDate = toDate;
+} else {
+  params.range = range;
+}
+
       if (dutyType) params.dutyType = dutyType;
       if (carType) params.carType = carType;
       if (packageCode) params.packageCode = packageCode;
@@ -76,10 +87,11 @@ const ReportPage = () => {
     }
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchReport();
-  }, [range, dutyType, carType, packageCode]);
+useEffect(() => {
+  setCurrentPage(1);
+  fetchReport();
+}, [range, dutyType, carType, packageCode, fromDate, toDate]);
+
 
   const handleExportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
@@ -149,6 +161,20 @@ const ReportPage = () => {
           <option value="mtd">Month to Date</option>
           <option value="ytd">Year to Date</option>
         </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <input
+    type="date"
+    value={fromDate}
+    onChange={(e) => setFromDate(e.target.value)}
+    className="border px-3 py-2 rounded"
+  />
+  <input
+    type="date"
+    value={toDate}
+    onChange={(e) => setToDate(e.target.value)}
+    className="border px-3 py-2 rounded"
+  />
+</div>
 
         <select
           value={dutyType}
