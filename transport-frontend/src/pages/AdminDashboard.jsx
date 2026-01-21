@@ -11,6 +11,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [roleBuffer, setRoleBuffer] = useState({});
+  const SHOW_MASTER_ADMIN = true; // 🔁 set false later
+
 
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
@@ -187,7 +189,7 @@ const AdminDashboard = () => {
             </thead>
             <tbody>
       {users
-        .filter((user) => user._id !== '686e1c8a29363eafade20688')
+        .filter((user) => SHOW_MASTER_ADMIN ? true : user._id !== '686e1c8a29363eafade20688')
         .map((user) => (
                 <tr key={user._id}>
                   <td className="border px-2 py-1">{user.name}</td>
