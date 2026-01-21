@@ -44,12 +44,19 @@ const ReportPage = () => {
     try {
       const params = {};
 
-if (fromDate && toDate) {
+// Custom range validation
+if (range === "custom") {
+  if (!fromDate || !toDate) {
+    alert("Please enter both From and To dates for Custom Range");
+    setLoading(false);
+    return; // Stop fetching
+  }
   params.fromDate = fromDate;
   params.toDate = toDate;
 } else {
   params.range = range;
 }
+
 
       if (dutyType) params.dutyType = dutyType;
       if (carType) params.carType = carType;
@@ -88,9 +95,13 @@ if (fromDate && toDate) {
   };
 
 useEffect(() => {
+  // For custom range, only fetch if both dates are filled
+  if (range === "custom" && (!fromDate || !toDate)) return;
+
   setCurrentPage(1);
   fetchReport();
 }, [range, dutyType, carType, packageCode, fromDate, toDate]);
+
 
 
   const handleExportToExcel = async () => {
@@ -144,6 +155,7 @@ useEffect(() => {
         <button
           onClick={handleExportToExcel}
           className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+          disabled={range === "custom" && (!fromDate || !toDate)}
         >
           Export to Excel
         </button>
